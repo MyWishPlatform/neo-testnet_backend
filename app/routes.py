@@ -3,6 +3,7 @@ from flask import render_template
 from flask_limiter import Limiter, RateLimitExceeded
 from flask_limiter.util import get_remote_address
 from flask_sqlalchemy import request
+from config import Config
 import requests
 import json
 
@@ -12,9 +13,10 @@ dblimits = db_restrictions.DatabaseRestrictions()
 limiter = Limiter(app, key_func=get_remote_address)
 
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/', methods=['POST'])
 # restrict number of requests by IP - 1 request for IP per day
 @limiter.limit("1 per day")
+@limiter.enabled = app.config.from_object()
 def request_main():
     if request.method == 'POST':
         neo_address = request.json['address']
