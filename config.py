@@ -1,8 +1,18 @@
 import os
-appdir = os.path.abspath(os.path.dirname(__file__))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = os.path.dirname(os.path.realpath(__file__))
 
 
 class Config(object):
 
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///' + os.path.join(appdir, 'faucetapp.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    POSTGRES = {
+        'user': 'neo_faucet',
+        'pw':   'neo_faucet',
+        'db':   'neo_faucet',
+        'host': 'localhost',
+        'port': '5432',
+    }
+
+    SQLALCHEMY_DATABASE_URI = 'postgresql://%(user)s:%(pw)s@%(host)s:%(port)s/%(db)s' % POSTGRES
