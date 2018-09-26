@@ -12,7 +12,7 @@ dblimits = db_restrictions.DatabaseRestrictions()
 limiter = Limiter(app, key_func=get_remote_address)
 
 
-@app.route('/', methods=['POST'])
+@app.route('/api/request/', methods=['POST'])
 # restrict number of requests by IP - 1 request for IP per day
 @limiter.limit("1 per day")
 def request_main():
