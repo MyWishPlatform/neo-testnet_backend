@@ -1,8 +1,7 @@
 from app import app, db_restrictions
-from flask import render_template, make_response
+from flask import render_template, make_response, request
 from flask_limiter import Limiter, RateLimitExceeded
 from flask_limiter.util import get_remote_address
-from flask_sqlalchemy import request
 import requests
 import json
 
@@ -17,7 +16,7 @@ limiter = Limiter(app, key_func=get_remote_address)
 @limiter.limit("1 per day")
 def request_main():
     if request.method == 'POST':
-        responce = request.json
+        responce = request.get_json()
         captcha_result = captcha_verify(responce['g-recaptcha-responce'])
         if captcha_result["success"]:
             neo_address = responce['address']
