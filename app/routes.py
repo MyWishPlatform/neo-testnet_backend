@@ -35,7 +35,7 @@ def request_main():
             # send request and fetch response
             dumped_pl = json.dumps(cli_payload)
             asset_request = requests.post('http://127.0.0.1:40332', data=dumped_pl)
-            asset_response = asset_request.json()["result"]["vout"]
+            asset_response = asset_request.get_json()["result"]["vout"]
 
             return str(asset_response)
         else:
