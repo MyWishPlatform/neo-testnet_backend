@@ -5,7 +5,7 @@ import json
 def response_callback(error_type, msg):
     payload = {
         'success': False,
-        'error_type': error_type,
+        'code': error_type,
         'msg': msg
     }
 
@@ -13,19 +13,19 @@ def response_callback(error_type, msg):
 
 
 def ip_limit():
-    return response_callback("ip_limit", "IP limit: 1 request per day")
+    return response_callback(601, "IP limit: 1 request per day")
 
 
 def db_limit():
-    return response_callback("address_limit", "Address limit: 1 address per day")
+    return response_callback(602, "Address limit: 1 address per day")
 
 
 def tx_fail(err):
-    return response_callback("tx_error", err)
+    return response_callback(603, err)
 
 
 def captcha_fail(err):
-    return response_callback("captcha_error", err)
+    return response_callback(604, err)
 
 
 def send_success(addr):
