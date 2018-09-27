@@ -34,7 +34,7 @@ def request_main():
             db_query = dblimits.new_entry(neo_address)
             send_tx(neo_address, db_query, False)
         else:
-            return False
+            return responses.db_limit()
 
         return responses.send_success(neo_address)
     else:
