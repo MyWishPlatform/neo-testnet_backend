@@ -25,21 +25,25 @@ def request_main():
     if captcha_check["success"]:
         neo_address = response['address']
 
-        # check database, gives false if assets was requested
-        # for supplied address in 24 hours
-        if dblimits.validate_address(address=neo_address) is False:
-            return responses.db_limit()
-
-        # calling node to create transaction
-        try:
-            cli.sendfaucetassets(neo_address)
-        except (exceptions.Error, -300) as e:
-            traceback.print_exc()
-            return responses.tx_fail(e)
+        # find address in database, if address exists and 24 hours passed since last
+        # request update value in row, if address not founded - appending to new row
+        db_query = dblimits.find_address(neo_address)
+        if db_query is not None and dblimits.is_enough_time(db_query.last_request_date):
+            send_tx(neo_address, db_query, True)
+        elif db_query is None:
+            db_query = dblimits.new_entry(neo_address)
+            send_tx(neo_address, db_query, False)
+        else:
+            return False
 
         return responses.send_success(neo_address)
     else:
         return responses.captcha_fail(captcha_check)
+
+
+def send_tx(addr, query, update):
+    if relay_tx(addr):
+        dblimits.parse_query(query, update)
 
 
 # custom error through api for ip limiter
@@ -48,8 +52,17 @@ def limit_handler(error):
     return responses.ip_limit()
 
 
-# captcha responce should be sended from here
+# captcha response should be send from here
 def captcha_verify(response):
     payload = {"secret": CAPTCHA_SECRET, "response": response}
     captcha_call = requests.post('https://www.google.com/recaptcha/api/siteverify', payload)
     return captcha_call.json()
+
+
+def relay_tx(addr):
+    try:
+        cli.sendfaucetassets(addr)
+        return True
+    except (exceptions.Error, -300) as e:
+        traceback.print_exc()
+        return responses.tx_fail(e)

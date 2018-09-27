@@ -12,9 +12,8 @@ class DatabaseRestrictions(object):
 
     # add new entry in db
     @staticmethod
-    def store_address(address):
-        request = AssetsRequest(address=address, last_request_date=datetime.now())
-        db.session.add(request)
+    def store_address(req):
+        db.session.add(req)
         db.session.commit()
         return True
 
@@ -25,14 +24,16 @@ class DatabaseRestrictions(object):
         db.session.commit()
         return True
 
-    # find address in database, if address exists and 24 hours passed since last
-    # request update value in row, if address not founded - appending to new row
-    def validate_address(self, address):
-        request = AssetsRequest.query.filter_by(address=address).one_or_none()
-        if request is None:
-            self.store_address(address)
+    @staticmethod
+    def find_address(addr):
+        return AssetsRequest.query.filter_by(address=addr).one_or_none()
+
+    @staticmethod
+    def new_entry(addr):
+        return AssetsRequest(address=addr, last_request_date=datetime.now())
+
+    def parse_query(self, request, update):
+        if update:
+            self.update_request(request)
         else:
-            if self.is_enough_time(request.last_request_date):
-                self.update_request(request)
-            else:
-                return False
+            self.store_address(request)
