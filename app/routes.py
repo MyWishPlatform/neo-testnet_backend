@@ -1,39 +1,68 @@
-from app import app, db_restrictions
-from flask import render_template
-from flask_limiter import Limiter, RateLimitExceeded
+from app import app, db_restrictions, responses
+from settings_local import FAUCET_CLI, CAPTCHA_SECRET
+from flask import request
+from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from flask_sqlalchemy import request
+from flask_jsonrpc.proxy import ServiceProxy
+from flask_jsonrpc import exceptions
 import requests
-import json
-
+import traceback
 
 dblimits = db_restrictions.DatabaseRestrictions()
 limiter = Limiter(app, key_func=get_remote_address)
+cli = ServiceProxy(FAUCET_CLI)
 
 
-@app.route('/')
-def request_form():
-    return render_template("form.html")
-
-
-@app.route('/', methods=['POST'])
+@app.route('/api/request/', methods=['POST'])
+# restrict number of requests by IP - 1 request for IP per day
 @limiter.limit("1 per day")
 def request_main():
-    neo_address = request.form['text']
 
-    if dblimits.validate_address(address=neo_address) is False:
-        raise RateLimitExceeded
+    # fetch captcha key and validate
+    response = request.get_json()
+    captcha_check = captcha_verify(response['g-recaptcha-response'])
 
-    payload = {
-        "jsonrpc": "2.0",
-        "method": "sendfaucetassets",
-        "params": [str(neo_address)],
-        "id": "1"
-    }
+    if captcha_check["success"]:
+        neo_address = response['address']
 
-    dumped_pl = json.dumps(payload)
+        # find address in database, if address exists and 24 hours passed since last
+        # request update value in row, if address not founded - appending to new row
+        db_query = dblimits.find_address(neo_address)
+        if db_query is not None and dblimits.is_enough_time(db_query.last_request_date):
+            send_tx(neo_address, db_query, True)
+        elif db_query is None:
+            db_query = dblimits.new_entry(neo_address)
+            send_tx(neo_address, db_query, False)
+        else:
+            return responses.db_limit()
 
-    asset_request = requests.post('http://127.0.0.1:40332', data=dumped_pl)
-    asset_responce = asset_request.json()["result"]["vout"][0]
+        return responses.send_success(neo_address)
+    else:
+        return responses.captcha_fail(captcha_check)
 
-    return str(asset_responce)
+
+def send_tx(addr, query, update):
+    if relay_tx(addr):
+        dblimits.parse_query(query, update)
+
+
+# custom error through api for ip limiter
+@app.errorhandler(429)
+def limit_handler(error):
+    return responses.ip_limit()
+
+
+# captcha response should be send from here
+def captcha_verify(response):
+    payload = {"secret": CAPTCHA_SECRET, "response": response}
+    captcha_call = requests.post('https://www.google.com/recaptcha/api/siteverify', payload)
+    return captcha_call.json()
+
+
+def relay_tx(addr):
+    try:
+        cli.sendfaucetassets(addr)
+        return True
+    except (exceptions.Error, -300) as e:
+        traceback.print_exc()
+        return responses.tx_fail(e)
