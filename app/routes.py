@@ -1,56 +1,53 @@
-from app import app, db_restrictions
-from flask import render_template, make_response, request
-from flask_limiter import Limiter, RateLimitExceeded
+from app import app, db_restrictions, responses
+from settings_local import FAUCET_CLI, CAPTCHA_SECRET
+from flask import request
+from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_jsonrpc.proxy import ServiceProxy
+from flask_jsonrpc import exceptions
 import requests
-import json
 
 
 dblimits = db_restrictions.DatabaseRestrictions()
-# TODO: use limiter with memcached/redis, not in-memory
 limiter = Limiter(app, key_func=get_remote_address)
+cli = ServiceProxy(FAUCET_CLI)
 
 
 @app.route('/api/request/', methods=['POST'])
 # restrict number of requests by IP - 1 request for IP per day
 @limiter.limit("1 per day")
 def request_main():
-    if request.method == 'POST':
-        response = request.get_json()
-        captcha_result = captcha_verify(response['g-recaptcha-response'])
-        if captcha_result["success"]:
-            neo_address = response['address']
 
-            if dblimits.validate_address(address=neo_address) is False:
-                raise RateLimitExceeded
+    # fetch captcha key and validate
+    response = request.get_json()
+    captcha_check = captcha_verify(response['g-recaptcha-response'])
 
-            # generate payload to RPC
-            cli_payload = {
-                "jsonrpc": "2.0",
-                "method": "sendfaucetassets",
-                "params": [str(neo_address)],
-                "id": "1"
-            }
+    if captcha_check["success"]:
+        neo_address = response['address']
 
-            # send request and fetch response
-            dumped_pl = json.dumps(cli_payload)
-            asset_request = requests.post('http://127.0.0.1:40332', data=dumped_pl)
-            asset_response = asset_request.json()
+        # check database, gives false if assets was requested
+        # for supplied address in 24 hours
+        if dblimits.validate_address(address=neo_address) is False:
+            return responses.db_limit()
 
-            return str(asset_response)
-        else:
-            return make_response(str(captcha_result))
-    return render_template("form.html")
+        # calling node to create transaction
+        try:
+            cli.sendfaucetassets(neo_address)
+        except (exceptions.Error, -300) as e:
+            return responses.tx_fail(e)
+
+        return responses.send_success(neo_address)
+    else:
+        return responses.captcha_fail(captcha_check)
 
 
+# custom error through api for ip limiter
 @app.errorhandler(429)
 def limit_handler(error):
-    return make_response(json.dumps({'error': True, 'code': error.code, 'msg': str(error)}), 429)
+    return responses.ip_limit()
 
-
+# captcha responce should be sended from here
 def captcha_verify(response):
-    secret = "6LdK7HEUAAAAAJkjdSQnsN9SUzDT-bBAapMn97Ve"
-    payload = {"secret": secret, "response": response}
-    captcha_request = requests.post('https://www.google.com/recaptcha/api/siteverify', payload)
-    request_answer = captcha_request.json()
-    return request_answer
+    payload = {"secret": CAPTCHA_SECRET, "response": response}
+    captcha_call = requests.post('https://www.google.com/recaptcha/api/siteverify', payload)
+    return captcha_call.json()
