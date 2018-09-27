@@ -6,7 +6,7 @@ from flask_limiter.util import get_remote_address
 from flask_jsonrpc.proxy import ServiceProxy
 from flask_jsonrpc import exceptions
 import requests
-
+import traceback
 
 dblimits = db_restrictions.DatabaseRestrictions()
 limiter = Limiter(app, key_func=get_remote_address)
@@ -34,6 +34,7 @@ def request_main():
         try:
             cli.sendfaucetassets(neo_address)
         except (exceptions.Error, -300) as e:
+            traceback.print_exc()
             return responses.tx_fail(e)
 
         return responses.send_success(neo_address)
@@ -45,6 +46,7 @@ def request_main():
 @app.errorhandler(429)
 def limit_handler(error):
     return responses.ip_limit()
+
 
 # captcha responce should be sended from here
 def captcha_verify(response):
