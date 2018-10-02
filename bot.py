@@ -2,11 +2,11 @@ from time import sleep
 import traceback
 import hashlib
 import base58
+import datetime
 from jsonrpc_requests import Server
 import telegram
 from telegram.error import NetworkError, Unauthorized
 
-from app.models import AssetsRequest
 from app.db_restrictions import DatabaseRestrictions
 
 from settings_local import BOT_TOKEN, FAUCET_CLI
@@ -44,12 +44,20 @@ def work(bot):
             if asset_request is not None and not DatabaseRestrictions.is_enough_time(asset_request.last_request_date):
                 update.message.reply_text('This address was used recently. Please wait before next request')
                 continue
+            telegram_address = DatabaseRestrictions.find_telegram_address(str(update.message.from_user.id))
+            if telegram_address is not None and not DatabaseRestrictions.is_enough_time(telegram_address.last_request_date):
+                update.message.reply_text('This telegram address was used recently')
+                continue
             try:
                 send_funds(address)
                 if asset_request:
                     DatabaseRestrictions.update_request(asset_request)
                 else:
                     DatabaseRestrictions.store_address(DatabaseRestrictions.new_entry(address))
+                if telegram_address:
+                    DatabaseRestrictions.update_request(telegram_address)
+                else:
+                    DatabaseRestrictions.store_address(DatabaseRestrictions.new_telegram_entry(str(update.message.from_user.id)))
                 update.message.reply_text('Your funds sucessfully sent')
             except:
                 traceback.print_exc()
