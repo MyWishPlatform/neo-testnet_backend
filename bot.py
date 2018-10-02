@@ -16,7 +16,7 @@ MESSAGE_LIMIT_ADDR = 'You have exceeded the number of requests allowed in one da
 MESSAGE_SUCCESS = 'Assets were successfully sent.'
 MESSAGE_ERROR = 'An internal server error has occurred. Please, try again later.'
 
-DESC = '''This faucet provides 1000 NEO and 1000 Gas for just one NEO address and one telegram account.
+DESC = '''This faucet provides 3000 NEO and 3000 Gas for just one NEO address and one telegram account.
 For more information: http://neo.mywish.io'''
 
 
