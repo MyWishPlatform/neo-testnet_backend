@@ -2,14 +2,14 @@ from app import app, db_restrictions, responses
 from settings_local import FAUCET_CLI, CAPTCHA_SECRET
 from flask import request
 from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
+from flask_limiter.util import get_remote_address, get_ipaddr
 from flask_jsonrpc.proxy import ServiceProxy
 from flask_jsonrpc import exceptions
 import requests
 import traceback
 
 dblimits = db_restrictions.DatabaseRestrictions()
-limiter = Limiter(app, key_func=get_remote_address)
+limiter = Limiter(app, key_func=get_ipaddr)
 cli = ServiceProxy(FAUCET_CLI)
 
 
@@ -17,7 +17,6 @@ cli = ServiceProxy(FAUCET_CLI)
 # restrict number of requests by IP - 1 request for IP per day
 @limiter.limit("1 per day")
 def request_main():
-
     # fetch captcha key and validate
     response = request.get_json()
     captcha_check = captcha_verify(response['g-recaptcha-response'])

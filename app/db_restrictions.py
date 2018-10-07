@@ -1,4 +1,4 @@
-from app.models import AssetsRequest
+from app.models import AssetsRequest, TelegramAddress
 from datetime import datetime, timedelta
 from app import db
 
@@ -29,8 +29,16 @@ class DatabaseRestrictions(object):
         return AssetsRequest.query.filter_by(address=addr).one_or_none()
 
     @staticmethod
+    def find_telegram_address(addr):
+        return TelegramAddress.query.filter_by(telegram_address=addr).one_or_none()
+
+    @staticmethod
     def new_entry(addr):
         return AssetsRequest(address=addr, last_request_date=datetime.now())
+
+    @staticmethod
+    def new_telegram_entry(addr):
+        return TelegramAddress(telegram_address=addr, last_request_date=datetime.now())
 
     def parse_query(self, request, update):
         if update:

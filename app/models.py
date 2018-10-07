@@ -10,3 +10,10 @@ class AssetsRequest(db.Model):
 
     def __repr__(self):
         return '<Address {addr} last requested {dt}'.format(addr=self.address, dt=self.last_request_date)
+
+
+class TelegramAddress(db.Model):
+    __tablename__ = "telegram_address"
+    id = db.Column(db.Integer, primary_key=True)
+    telegram_address = db.Column(db.String(64), index=True, unique=True, nullable=False)
+    last_request_date = db.Column(db.DateTime(timezone=False), nullable=False)
