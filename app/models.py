@@ -17,3 +17,10 @@ class TelegramAddress(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     telegram_address = db.Column(db.String(64), index=True, unique=True, nullable=False)
     last_request_date = db.Column(db.DateTime(timezone=False), nullable=False)
+
+
+class IPAddress(db.Model):
+    __tablename__ = "ip_address"
+    id = db.Column(db.Integer, primary_key=True)
+    ip_address = db.Column(db.String(40), index=True, unique=True, nullable=False) # 40 for v6
+    last_request_date = db.Column(db.DateTime(timezone=False), nullable=False)

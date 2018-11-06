@@ -15,8 +15,10 @@ cli = ServiceProxy(FAUCET_CLI)
 
 @app.route('/api/request/', methods=['POST'])
 # restrict number of requests by IP - 1 request for IP per day
-@limiter.limit("1 per day")
+# @limiter.limit("1 per day")
 def request_main():
+
+
     # fetch captcha key and validate
     response = request.get_json()
     captcha_check = captcha_verify(response['g-recaptcha-response'])
@@ -26,30 +28,34 @@ def request_main():
 
         # find address in database, if address exists and 24 hours passed since last
         # request update value in row, if address not founded - appending to new row
-        db_query = dblimits.find_address(neo_address)
-        if db_query is not None and dblimits.is_enough_time(db_query.last_request_date):
-            send_tx(neo_address, db_query, True)
-        elif db_query is None:
-            db_query = dblimits.new_entry(neo_address)
-            send_tx(neo_address, db_query, False)
-        else:
+        neo_query = dblimits.find_address(neo_address)
+        if neo_query and not dblimits.is_enough_time(neo_query.last_request_date):
             return responses.db_limit()
-
+        ip = request.headers.getlist("X-Forwarded-For")[0] if request.headers.getlist("X-Forwarded-For") else request.remote_addr
+        ip_query = dblimits.find_ip_address(ip)
+        if ip_query and not dblimits.is_enough_time(ip_query.last_request_date):
+            return responses.ip_limit()
+        relay_tx(neo_address)
+        if neo_query:
+            dblimits.update_request(neo_query)
+        else:
+            dblimits.store_address(dblimits.new_entry(neo_address))
+        if ip_query:
+            dblimits.update_request(ip_query)
+        else:
+            dblimits.store_address(dblimits.new_ip_entry(ip))
         return responses.send_success(neo_address)
     else:
         return responses.captcha_fail(captcha_check)
 
 
-def send_tx(addr, query, update):
-    if relay_tx(addr):
-        dblimits.parse_query(query, update)
 
-
+"""
 # custom error through api for ip limiter
 @app.errorhandler(429)
 def limit_handler(error):
     return responses.ip_limit()
-
+"""
 
 # captcha response should be send from here
 def captcha_verify(response):
