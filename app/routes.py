@@ -26,27 +26,7 @@ def request_main():
     if not captcha_check["success"]:
         return responses.captcha_fail(captcha_check)
     else:
-        neo_address = response['address']
 
-        # find address in database, if address exists and 24 hours passed since last
-        # request update value in row, if address not founded - appending to new row
-        neo_query = dblimits.find_address(neo_address)
-        if neo_query and not dblimits.is_enough_time(neo_query.last_request_date):
-            return responses.db_limit()
-        ip = request.headers.getlist("X-Forwarded-For")[0] if request.headers.getlist("X-Forwarded-For") else request.remote_addr
-        ip_query = dblimits.find_ip_address(ip)
-        if ip_query and not dblimits.is_enough_time(ip_query.last_request_date):
-            return responses.ip_limit()
-        relay_tx(neo_address)
-        if neo_query:
-            dblimits.update_request(neo_query)
-        else:
-            dblimits.store_address(dblimits.new_entry(neo_address))
-        if ip_query:
-            dblimits.update_request(ip_query)
-        else:
-            dblimits.store_address(dblimits.new_ip_entry(ip))
-        return responses.send_success(neo_address)
 
 
 
@@ -72,3 +52,27 @@ def relay_tx(addr):
     except (exceptions.Error, -300) as e:
         traceback.print_exc()
         return responses.tx_fail(e)
+
+def process_request(response):
+    neo_address = response['address']
+
+    # find address in database, if address exists and 24 hours passed since last
+    # request update value in row, if address not founded - appending to new row
+    neo_query = dblimits.find_address(neo_address)
+    if neo_query and not dblimits.is_enough_time(neo_query.last_request_date):
+        return responses.db_limit()
+    ip = request.headers.getlist("X-Forwarded-For")[0] if request.headers.getlist(
+        "X-Forwarded-For") else request.remote_addr
+    ip_query = dblimits.find_ip_address(ip)
+    if ip_query and not dblimits.is_enough_time(ip_query.last_request_date):
+        return responses.ip_limit()
+    relay_tx(neo_address)
+    if neo_query:
+        dblimits.update_request(neo_query)
+    else:
+        dblimits.store_address(dblimits.new_entry(neo_address))
+    if ip_query:
+        dblimits.update_request(ip_query)
+    else:
+        dblimits.store_address(dblimits.new_ip_entry(ip))
+    return responses.send_success(neo_address)
