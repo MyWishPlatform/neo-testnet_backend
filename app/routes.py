@@ -23,7 +23,9 @@ def request_main():
     response = request.get_json()
     captcha_check = captcha_verify(response['g-recaptcha-response'])
 
-    if captcha_check["success"]:
+    if not captcha_check["success"]:
+        return responses.captcha_fail(captcha_check)
+    else:
         neo_address = response['address']
 
         # find address in database, if address exists and 24 hours passed since last
@@ -45,8 +47,7 @@ def request_main():
         else:
             dblimits.store_address(dblimits.new_ip_entry(ip))
         return responses.send_success(neo_address)
-    else:
-        return responses.captcha_fail(captcha_check)
+
 
 
 
