@@ -24,34 +24,28 @@ def request_main():
 
     # fetch captcha key and validate
     response = request.get_json()
-    # captcha_check = captcha_verify(response['g-recaptcha-response'])
-    #
-    # if not captcha_check["success"]:
-    #     return responses.captcha_fail(captcha_check)
-    # else:
-    #     process_request(response)
-    print(response)
-    neo_address = response['address']
-    neo_asset = response['asset']
-    print(neo_address)
-    print(neo_asset)
+    captcha_check = captcha_verify(response['g-recaptcha-response'])
 
-    neo_query = find_address(neo_address, neo_asset)
-    print(neo_query)
-    #    if neo_query and not dblimits.is_enough_time(neo_query.last_request_date):
-    #        return responses.db_limit()
+    if not captcha_check["success"]:
+        return responses.captcha_fail(captcha_check)
+    else:
+        neo_address = response['address']
+        neo_asset = response['asset']
 
-    ip = request.headers.getlist("X-Forwarded-For")[0] if request.headers.getlist("X-Forwarded-For") else request.remote_addr
-    ip_query = dblimits.find_ip_address(ip)
-    #    if ip_query and not dblimits.is_enough_time(ip_query.last_request_date):
-    #        return responses.ip_limit()
+        neo_query = find_address(neo_address, neo_asset)
+        if neo_query and not dblimits.is_enough_time(neo_query.last_request_date):
+            return responses.db_limit()
 
-    relay_tx(neo_address, neo_asset)
-    db_save_address(neo_query, neo_address, neo_asset)
-    db_save_ip(ip_query, ip)
+        ip = request.headers.getlist("X-Forwarded-For")[0] if request.headers.getlist("X-Forwarded-For") else request.remote_addr
+        ip_query = dblimits.find_ip_address(ip)
+        if ip_query and not dblimits.is_enough_time(ip_query.last_request_date):
+            return responses.ip_limit()
 
-    print("success")
-    return responses.send_success(neo_address)
+        relay_tx(neo_address, neo_asset)
+        db_save_address(neo_query, neo_address, neo_asset)
+        db_save_ip(ip_query, ip)
+
+        return responses.send_success(neo_address)
 
 
 """
@@ -75,8 +69,7 @@ def relay_tx(address, asset):
             cli.sendtoaddress(asset_neo, address, asset_amount)
         elif asset == "GAS":
             cli.sendtoaddress(asset_gas, address, asset_amount)
-        # cli.sendfaucetassets(address)
-        # return True
+
     except (exceptions.Error, -300) as e:
         traceback.print_exc()
         return responses.tx_fail(e)
