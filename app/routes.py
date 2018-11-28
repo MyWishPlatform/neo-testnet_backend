@@ -20,12 +20,14 @@ def request_main():
 
     # fetch captcha key and validate
     response = request.get_json()
-    captcha_check = captcha_verify(response['g-recaptcha-response'])
-
-    if not captcha_check["success"]:
-        return responses.captcha_fail(captcha_check)
-    else:
-        process_request(response)
+    # captcha_check = captcha_verify(response['g-recaptcha-response'])
+    #
+    # if not captcha_check["success"]:
+    #     return responses.captcha_fail(captcha_check)
+    # else:
+    #     process_request(response)
+    print(response)
+    process_request(response)
 
 
 """
@@ -54,10 +56,15 @@ def relay_tx(addr):
 
 def process_request(response):
     neo_address = response['address']
+    neo_asset = response['asset']
 
     # find address in database, if address exists and 24 hours passed since last
     # request update value in row, if address not founded - appending to new row
-    neo_query = dblimits.find_address(neo_address)
+    if neo_asset == "NEO":
+        neo_query = dblimits.find_neo_address(neo_address)
+    elif neo_asset == "GAS":
+        neo_query = dblimits.find_gas_address(neo_address)
+
     if neo_query and not dblimits.is_enough_time(neo_query.last_request_date):
         return responses.db_limit()
 
@@ -67,12 +74,15 @@ def process_request(response):
     if ip_query and not dblimits.is_enough_time(ip_query.last_request_date):
         return responses.ip_limit()
 
-    relay_tx(neo_address)
+    relay_tx(neo_address, neo_asset)
 
     if neo_query:
         dblimits.update_request(neo_query)
     else:
-        dblimits.store_address(dblimits.new_entry(neo_address))
+        if neo_asset == "NEO":
+            dblimits.store_address(dblimits.new_neo_entry(neo_address))
+        elif neo_asset == "GAS":
+            dblimits.store_address(dblimits.new_gas_entry(neo_address))
 
     if ip_query:
         dblimits.update_request(ip_query)
