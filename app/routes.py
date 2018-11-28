@@ -12,6 +12,10 @@ dblimits = db_restrictions.DatabaseRestrictions()
 limiter = Limiter(app, key_func=get_ipaddr)
 cli = ServiceProxy(FAUCET_CLI)
 
+asset_neo = "0xc56f33fc6ecfcd0c225c4ab356fee59390af8560be0e930faebe74a6daff7c9b"
+asset_gas = "0x602c79718b16e442de58778e148d0b1084e3b2dffd5de6b7b16cee7969282de7"
+asset_amount = 1
+
 
 @app.route('/api/request/', methods=['POST'])
 # restrict number of requests by IP - 1 request for IP per day
@@ -27,7 +31,27 @@ def request_main():
     # else:
     #     process_request(response)
     print(response)
-    process_request(response)
+    neo_address = response['address']
+    neo_asset = response['asset']
+    print(neo_address)
+    print(neo_asset)
+
+    neo_query = find_address(neo_address, neo_asset)
+    print(neo_query)
+    #    if neo_query and not dblimits.is_enough_time(neo_query.last_request_date):
+    #        return responses.db_limit()
+
+    ip = request.headers.getlist("X-Forwarded-For")[0] if request.headers.getlist("X-Forwarded-For") else request.remote_addr
+    ip_query = dblimits.find_ip_address(ip)
+    #    if ip_query and not dblimits.is_enough_time(ip_query.last_request_date):
+    #        return responses.ip_limit()
+
+    relay_tx(neo_address, neo_asset)
+    db_save_address(neo_query, neo_address, neo_asset)
+    db_save_ip(ip_query, ip)
+
+    print("success")
+    return responses.send_success(neo_address)
 
 
 """
@@ -45,48 +69,41 @@ def captcha_verify(response):
     return captcha_call.json()
 
 
-def relay_tx(addr):
+def relay_tx(address, asset):
     try:
-        cli.sendfaucetassets(addr)
-        return True
+        if asset == "NEO":
+            cli.sendtoaddress(asset_neo, address, asset_amount)
+        elif asset == "GAS":
+            cli.sendtoaddress(asset_gas, address, asset_amount)
+        # cli.sendfaucetassets(address)
+        # return True
     except (exceptions.Error, -300) as e:
         traceback.print_exc()
         return responses.tx_fail(e)
 
 
-def process_request(response):
-    neo_address = response['address']
-    neo_asset = response['asset']
+def find_address(address, asset):
 
     # find address in database, if address exists and 24 hours passed since last
     # request update value in row, if address not founded - appending to new row
-    if neo_asset == "NEO":
-        neo_query = dblimits.find_neo_address(neo_address)
-    elif neo_asset == "GAS":
-        neo_query = dblimits.find_gas_address(neo_address)
+    if asset == "NEO":
+        return dblimits.find_neo_address(address)
+    elif asset == "GAS":
+        return dblimits.find_gas_address(address)
 
-    if neo_query and not dblimits.is_enough_time(neo_query.last_request_date):
-        return responses.db_limit()
 
-    ip = request.headers.getlist("X-Forwarded-For")[0] if request.headers.getlist("X-Forwarded-For") else request.remote_addr
-    ip_query = dblimits.find_ip_address(ip)
-
-    if ip_query and not dblimits.is_enough_time(ip_query.last_request_date):
-        return responses.ip_limit()
-
-    relay_tx(neo_address, neo_asset)
-
-    if neo_query:
-        dblimits.update_request(neo_query)
+def db_save_address(query, address, asset):
+    if query:
+        dblimits.update_request(query)
     else:
-        if neo_asset == "NEO":
-            dblimits.store_address(dblimits.new_neo_entry(neo_address))
-        elif neo_asset == "GAS":
-            dblimits.store_address(dblimits.new_gas_entry(neo_address))
+        if asset == "NEO":
+            dblimits.store_address(dblimits.new_neo_entry(address))
+        elif asset == "GAS":
+            dblimits.store_address(dblimits.new_gas_entry(address))
 
-    if ip_query:
-        dblimits.update_request(ip_query)
+
+def db_save_ip(query, ip):
+    if query:
+        dblimits.update_request(query)
     else:
         dblimits.store_address(dblimits.new_ip_entry(ip))
-
-    return responses.send_success(neo_address)
