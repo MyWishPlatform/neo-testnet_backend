@@ -1,4 +1,4 @@
-from app.models import AssetsRequest, TelegramAddress
+from app.models import NeoRequest, GasRequest, TelegramAddress, IPAddress
 from datetime import datetime, timedelta
 from app import db
 
@@ -25,20 +25,36 @@ class DatabaseRestrictions(object):
         return True
 
     @staticmethod
-    def find_address(addr):
-        return AssetsRequest.query.filter_by(address=addr).one_or_none()
+    def find_neo_address(addr):
+        return NeoRequest.query.filter_by(address=addr).one_or_none()
+
+    @staticmethod
+    def find_gas_address(addr):
+        return GasRequest.query.filter_by(address=addr).one_or_none()
 
     @staticmethod
     def find_telegram_address(addr):
         return TelegramAddress.query.filter_by(telegram_address=addr).one_or_none()
 
     @staticmethod
-    def new_entry(addr):
-        return AssetsRequest(address=addr, last_request_date=datetime.now())
+    def find_ip_address(addr):
+        return IPAddress.query.filter_by(ip_address=addr).one_or_none()
+
+    @staticmethod
+    def new_neo_entry(addr):
+        return NeoRequest(address=addr, last_request_date=datetime.now())
+
+    @staticmethod
+    def new_gas_entry(addr):
+        return GasRequest(address=addr, last_request_date=datetime.now())
 
     @staticmethod
     def new_telegram_entry(addr):
         return TelegramAddress(telegram_address=addr, last_request_date=datetime.now())
+
+    @staticmethod
+    def new_ip_entry(addr):
+        return IPAddress(ip_address=addr, last_request_date=datetime.now())
 
     def parse_query(self, request, update):
         if update:
