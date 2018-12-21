@@ -16,6 +16,5 @@ class Config(object):
     }
 
     SQLALCHEMY_DATABASE_URI = 'postgresql://%(user)s:%(pw)s@%(host)s:%(port)s/%(db)s' % POSTGRES
-    RATELIMIT_ENABLED = False
-    CAPTCHA_ENABLED = True
+    RATELIMIT_ENABLED = True
     DROP_AMOUNT = 1000
