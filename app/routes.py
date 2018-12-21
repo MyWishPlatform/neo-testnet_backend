@@ -15,7 +15,7 @@ cli = ServiceProxy(FAUCET_CLI)
 asset_neo = "0xc56f33fc6ecfcd0c225c4ab356fee59390af8560be0e930faebe74a6daff7c9b"
 asset_gas = "0x602c79718b16e442de58778e148d0b1084e3b2dffd5de6b7b16cee7969282de7"
 asset_amount = app.config['DROP_AMOUNT']
-limit_on = config['RATELIMIT_ENABLED']
+limit_on = app.config['RATELIMIT_ENABLED']
 
 
 @app.route('/api/request/', methods=['POST'])
