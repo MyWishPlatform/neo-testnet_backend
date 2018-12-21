@@ -14,7 +14,8 @@ cli = ServiceProxy(FAUCET_CLI)
 
 asset_neo = "0xc56f33fc6ecfcd0c225c4ab356fee59390af8560be0e930faebe74a6daff7c9b"
 asset_gas = "0x602c79718b16e442de58778e148d0b1084e3b2dffd5de6b7b16cee7969282de7"
-asset_amount = DROP_AMOUNT
+asset_amount = app.config['DROP_AMOUNT']
+limit_on = config['RATELIMIT_ENABLED']
 
 
 @app.route('/api/request/', methods=['POST'])
@@ -23,17 +24,16 @@ asset_amount = DROP_AMOUNT
 def request_main():
 
     # fetch captcha key and validate
-    if CAPTCHA_ENABLED:
-        response = request.get_json()
-        captcha_check = captcha_verify(response['g-recaptcha-response'])
+    response = request.get_json()
+    captcha_check = captcha_verify(response['g-recaptcha-response'])
 
-    if not captcha_check["success"] and CAPTCHA_ENABLED:
+    if not captcha_check["success"]:
         return responses.captcha_fail(captcha_check)
     else:
         neo_address = response['address']
         neo_asset = response['asset']
 
-        if RATELIMIT_ENABLED:
+        if limit_on:
             neo_query = find_address(neo_address, neo_asset)
             if neo_query and not dblimits.is_enough_time(neo_query.last_request_date):
                 return responses.db_limit()
@@ -45,7 +45,7 @@ def request_main():
 
         relay_tx(neo_address, neo_asset)
         
-        if RATELIMIT_ENABLED:
+        if limit_on:
             db_save_address(neo_query, neo_address, neo_asset)
             db_save_ip(ip_query, ip)
 
