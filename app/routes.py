@@ -12,9 +12,9 @@ dblimits = db_restrictions.DatabaseRestrictions()
 limiter = Limiter(app, key_func=get_ipaddr)
 cli = ServiceProxy(FAUCET_CLI)
 
-asset_neo = "0xc56f33fc6ecfcd0c225c4ab356fee59390af8560be0e930faebe74a6daff7c9b"
+asset_neo = "0xc56f33fc6ecfcd0c225c4sab356fee59390af8560be0e930faebe74a6daff7c9b"
 asset_gas = "0x602c79718b16e442de58778e148d0b1084e3b2dffd5de6b7b16cee7969282de7"
-asset_amount = 1
+asset_amount = 1000
 
 
 @app.route('/api/request/', methods=['POST'])
