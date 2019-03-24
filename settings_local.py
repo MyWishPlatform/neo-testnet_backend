@@ -1,0 +1,3 @@
+FAUCET_CLI = 'http://127.0.0.1:20332'
+BOT_TOKEN = ""
+CAPTCHA_SECRET = "" 
