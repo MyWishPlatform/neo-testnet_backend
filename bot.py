@@ -72,7 +72,8 @@ def work(bot):
                 DatabaseRestrictions.update_request(telegram_address)
             else:
                 DatabaseRestrictions.store_address(DatabaseRestrictions.new_telegram_entry(str(update.message.from_user.id)))
-            update.message.reply_text(MESSAGE_SUCCESS)
+            # update.message.reply_text(MESSAGE_SUCCESS)
+            update.message.reply_text(repsonse)
         except ProtocolError as e:
             update.message.reply_text(e)
         except Exception as e:
