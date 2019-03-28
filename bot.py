@@ -75,9 +75,9 @@ def work(bot):
             update.message.reply_text(MESSAGE_SUCCESS)
         except ProtocolError as e:
             update.message.reply_text(e)
-        except:
+        except Exception as e:
             traceback.print_exc()
-            update.message.reply_text(MESSAGE_ERROR)
+            update.message.reply_text(e)
 
 
 
