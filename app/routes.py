@@ -43,9 +43,13 @@ def request_main():
             if ip_query and neo_query and not dblimits.is_enough_time(ip_query.last_request_date):
                 return responses.ip_limit()
 
-        ret = relay_tx(neo_address, neo_asset)
-        if  ret['error'] and ret['error']['code'] == -33000:
-            return responses.tx_fail(ret['error']['message'])  
+        ret = {}
+        if asset == "NEO":
+            ret = cli.sendtoaddress(asset_neo, address, asset_amount)
+        elif asset == "GAS":
+            ret = cli.sendtoaddress(asset_gas, address, asset_amount)
+        if  ret['error'] and ret['error']['code'] != 0:
+            return responses.balance_fail(ret['error']['message'])  
         if limit_on:
             db_save_address(neo_query, neo_address, neo_asset)
             db_save_ip(ip_query, ip)
@@ -69,12 +73,14 @@ def captcha_verify(response):
 
 
 def relay_tx(address, asset):
-    ret = {}
-    if asset == "NEO":
-        ret = cli.sendtoaddress(asset_neo, address, asset_amount)
-    elif asset == "GAS":
-        ret = cli.sendtoaddress(asset_gas, address, asset_amount)
-    return ret
+     try:
+        if asset == "NEO":
+            cli.sendtoaddress(asset_neo, address, asset_amount)
+        elif asset == "GAS":
+            cli.sendtoaddress(asset_gas, address, asset_amount)
+    except (exceptions.Error, -300) as e:
+        traceback.print_exc()
+        return responses.tx_fail(e)
 
 
 def find_address(address, asset):

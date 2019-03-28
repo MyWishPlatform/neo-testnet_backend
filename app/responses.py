@@ -27,6 +27,9 @@ def tx_fail(err):
 def captcha_fail(err):
     return response_callback(604, err)
 
+def balance_fail(err):
+    return response_callback(605,err)
+
 
 def send_success(addr):
     return json.dumps({'success': True, 'address': addr})

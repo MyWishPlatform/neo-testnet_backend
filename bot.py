@@ -73,10 +73,9 @@ def work(bot):
             else:
                 DatabaseRestrictions.store_address(DatabaseRestrictions.new_telegram_entry(str(update.message.from_user.id)))
             update.message.reply_text(MESSAGE_SUCCESS)
-            # update.message.reply_text(repsonse)
-        except Exception as e:
+        except:
             traceback.print_exc()
-            update.message.reply_text(e)
+            update.message.reply_text(MESSAGE_ERROR)
 
 
 
