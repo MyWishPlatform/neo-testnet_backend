@@ -74,7 +74,8 @@ def relay_tx(address, asset):
         elif asset == "GAS":
             cli.sendtoaddress(asset_gas, address, asset_amount)
 
-    except (exceptions.Error, -300) as e:
+    # except (exceptions.Error, -300) as e:
+    except Exception as e:
         traceback.print_exc()
         return responses.tx_fail(e)
 
