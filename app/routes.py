@@ -44,10 +44,10 @@ def request_main():
                 return responses.ip_limit()
 
         ret = {}
-        if asset == "NEO":
-            ret = cli.sendtoaddress(asset_neo, address, asset_amount)
-        elif asset == "GAS":
-            ret = cli.sendtoaddress(asset_gas, address, asset_amount)
+        if neo_asset == "NEO":
+            ret = cli.sendtoaddress(asset_neo, neo_address, asset_amount)
+        elif neo_asset == "GAS":
+            ret = cli.sendtoaddress(asset_gas, neo_address, asset_amount)
         if  ret['error'] and ret['error']['code'] != 0:
             return responses.balance_fail(ret['error']['message'])  
         if limit_on:
