@@ -63,7 +63,7 @@ def work(bot):
             update.message.reply_text(MESSAGE_LIMIT_ADDR)
             continue
         try:
-            send_funds(address)
+            repsonse = send_funds(address)
             if asset_request:
                 DatabaseRestrictions.update_request(asset_request)
             else:
@@ -73,8 +73,10 @@ def work(bot):
             else:
                 DatabaseRestrictions.store_address(DatabaseRestrictions.new_telegram_entry(str(update.message.from_user.id)))
             update.message.reply_text(MESSAGE_SUCCESS)
+        except ProtocolError as e:
+            update.message.reply_text(e)
         except:
-            traceback.print_exc(file=open('error.log','w+'))
+            traceback.print_exc()
             update.message.reply_text(MESSAGE_ERROR)
 
 
