@@ -68,14 +68,15 @@ def captcha_verify(response):
 
 
 def relay_tx(address, asset):
+    ret = {}
     try:
         if asset == "NEO":
-            cli.sendtoaddress(asset_neo, address, asset_amount)
+            ret = cli.sendtoaddress(asset_neo, address, asset_amount)
         elif asset == "GAS":
-            cli.sendtoaddress(asset_gas, address, asset_amount)
-
-    # except (exceptions.Error, -300) as e:
-    except Exception as e:
+            ret = cli.sendtoaddress(asset_gas, address, asset_amount)
+        if  ret['error'] and ret['error']['code'] == '300':
+            return responses.tx_fail(ret['error']['message'])    
+    except (exceptions.Error, -300) as e:
         traceback.print_exc()
         return responses.tx_fail(e)
 
