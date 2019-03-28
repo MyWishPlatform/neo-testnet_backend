@@ -73,7 +73,7 @@ def captcha_verify(response):
 
 
 def relay_tx(address, asset):
-     try:
+    try:
         if asset == "NEO":
             cli.sendtoaddress(asset_neo, address, asset_amount)
         elif asset == "GAS":
