@@ -48,7 +48,7 @@ def request_main():
             ret = cli.sendtoaddress(asset_neo, neo_address, asset_amount)
         elif neo_asset == "GAS":
             ret = cli.sendtoaddress(asset_gas, neo_address, asset_amount)
-        if ret.has_key('error') and ret['error'] and ret['error']['code'] != 0:
+        if 'error' in ret and ret['error'] and ret['error']['code'] != 0:
             return responses.balance_fail(ret['error']['message'])  
         if limit_on:
             db_save_address(neo_query, neo_address, neo_asset)
