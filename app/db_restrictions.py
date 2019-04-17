@@ -1,4 +1,4 @@
-from app.models import NeoRequest, GasRequest, TelegramAddress, IPAddress
+from app.models import NeoRequest, GasRequest, TelegramAddress, IPAddress, RequestLog
 from datetime import datetime, timedelta
 from app import db
 
@@ -34,7 +34,8 @@ class DatabaseRestrictions(object):
 
     @staticmethod
     def find_telegram_address(addr):
-        return TelegramAddress.query.filter_by(telegram_address=addr).one_or_none()
+        return TelegramAddress.query.filter_by(
+            telegram_address=addr).one_or_none()
 
     @staticmethod
     def find_ip_address(addr):
@@ -50,11 +51,21 @@ class DatabaseRestrictions(object):
 
     @staticmethod
     def new_telegram_entry(addr):
-        return TelegramAddress(telegram_address=addr, last_request_date=datetime.now())
+        return TelegramAddress(telegram_address=addr,
+                               last_request_date=datetime.now())
 
     @staticmethod
     def new_ip_entry(addr):
         return IPAddress(ip_address=addr, last_request_date=datetime.now())
+
+    @staticmethod
+    def new_request_log(addr, account, amount, tokentype, ip):
+        return RequestLog(address=addr,
+                          account=account,
+                          amount=amount,
+                          token_type=tokentype,
+                          ip_address=ip,
+                          request_date=datetime.now())
 
     def parse_query(self, request, update):
         if update:

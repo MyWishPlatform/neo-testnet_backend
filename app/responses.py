@@ -30,6 +30,14 @@ def captcha_fail(err):
 def balance_fail(err):
     return response_callback(605,err)
 
+def login_fail(err):
+    return response_callback(401,err)
 
 def send_success(addr):
     return json.dumps({'success': True, 'address': addr})
+
+def success(obj):
+    return make_response(json.dumps({
+        'success': True,
+        'data':obj
+    }))

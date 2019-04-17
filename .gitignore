@@ -113,3 +113,6 @@ dmypy.json
 
 # PyChaim
 .idea/
+
+.vs/
+.vscode/
