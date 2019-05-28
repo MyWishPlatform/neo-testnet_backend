@@ -1,6 +1,6 @@
 # test
-FAUCET_CLI = 'http://127.0.0.1:10003'
+# FAUCET_CLI = 'http://127.0.0.1:10003'
 # prod
-#FAUCET_CLI = 'http://127.0.0.1:20332'
+FAUCET_CLI = 'http://127.0.0.1:20332'
 BOT_TOKEN = ""
 CAPTCHA_SECRET = "6LfNuZkUAAAAAAg4Hy1EqXto5U7O1wBII8ZajAzd" 
